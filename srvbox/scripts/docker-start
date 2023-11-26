@@ -1,0 +1,11 @@
+#!/bin/bash
+
+MGMT_IP="$(ip -br -4 a | grep 10.255 | tr -s ' ' | cut -d' ' -f3 | cut -d/ -f1)"
+sed -i 's/^#ListenAddress 0\.0\.0\.0/ListenAddress '${MGMT_IP}'/' /etc/ssh/sshd_config
+sed -i 's/#StrictModes yes/StrictModes no/' /etc/ssh/sshd_config
+
+echo "rc_need=\"net.${MGMT_IP}\"" >> /etc/conf.d/ssh
+
+rc-service sshd start
+
+/usr/bin/tail -F auth.log
