@@ -6,8 +6,8 @@ Scenario contains configuration for MPLS L3VPN.
 
 ## Topology
 
-![Topology](_docs/l3_vpn_topo_dark.png#gh-dark-mode-only)
-![Topology.](_docs/l3_vpn_topo_light.png#gh-light-mode-only)
+![Topology](docs/l3_vpn_topo_dark.png#gh-dark-mode-only)
+![Topology.](docs/l3_vpn_topo_light.png#gh-light-mode-only)
 
 > ~drawn with [Excalidraw](https://excalidraw.com)
 
@@ -30,6 +30,6 @@ docker compose --profile topo up -d
 # enter ansible container
 docker exec -it ansible-tower_mgmt bash
 
-# execute 
+# execute
 ansible-playbook -i /srv/ansible/inventory.yml /srv/ansible/jobs/topo.yml
 ```

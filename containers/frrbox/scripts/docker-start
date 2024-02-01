@@ -3,6 +3,9 @@
 MGMT_IP="$(ip -br -4 a | grep 10.255 | tr -s ' ' | cut -d' ' -f3 | cut -d/ -f1)"
 sed -i 's/IP_TO_BIND/'${MGMT_IP}'/' /etc/ssh/sshd_config
 service ssh start
+service lldpd start
 
 source /usr/lib/frr/frrcommon.sh
-/usr/lib/frr/watchfrr $(daemon_list)
+/usr/lib/frr/watchfrr $(daemon_list) -d
+
+/usr/bin/tail -F anything

@@ -1,8 +1,9 @@
-FROM alpine:3.18
+FROM python:3.11-alpine3.18
 
 RUN apk update \
-    && apk add \
+    && apk add --no-cache \
         bash \
+        curl \
         mtr \
         iproute2 \
         bind-tools \

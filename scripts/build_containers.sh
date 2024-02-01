@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# build all containers
+# build all containers in this project
 
 _project_root="$(git rev-parse --show-toplevel)"
 

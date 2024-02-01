@@ -1,0 +1,34 @@
+#!/bin/bash
+
+db () {
+    docker exec -it "${1}" bash
+}
+
+dv () {
+    docker exec -it "${1}" vtysh
+}
+
+dbf () {
+    local _choice
+    _choice="$(docker ps --format '{{.Names}}' \
+        | fzf --height=10% --border-label=" Choose host " --prompt="[ host ] " --border=sharp)"
+
+    docker exec -it "${_choice}" bash
+}
+
+dvf () {
+    local _choice
+    _choice="$(docker ps --filter 'ancestor=frrbox' --format '{{.Names}}' \
+        | fzf --height=10% --border-label=" Choose router " --prompt="[ router ] " --border=sharp)"
+
+    docker exec -it "${_choice}" vtysh
+}
+
+aplay () {
+    ANSIBLE_DISPLAY_SKIPPED_HOSTS=0 ANSIBLE_STDOUT_CALLBACK=yaml ansible-playbook -K "${1}"
+}
+
+alias dans="db ansible-tower.mgmt"
+
+complete -W "$(docker ps --format '{{.Names}}' | xargs)" db
+complete -W "$(docker ps --filter 'ancestor=frrbox' --format '{{.Names}}' | xargs)" dv

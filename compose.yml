@@ -1,0 +1,348 @@
+# vim: ft=docker-compose : ts=2 : sts=2 : sw=2 : et :
+---
+version: '3.8'
+name: l3vpn-topology
+
+x-ansible-pubkey: &ansible-pubkey
+  volumes:
+    - "$PWD/containers/atsbox/keys/ansible-tower_mgmt.pub:/root/.ssh/authorized_keys:ro"
+
+services:
+  router:
+    cap_add:
+      - CAP_NET_RAW
+      - NET_ADMIN
+      - SYS_ADMIN
+    image: frrbox
+    privileged: false
+    profiles: ["base"]
+    expose:
+      - "179"
+      - "22"
+    <<: *ansible-pubkey
+
+  server:
+    image: srvbox
+    profiles: ["base"]
+    expose:
+      - "22"
+    <<: *ansible-pubkey
+
+  r01_gw_side-a_corp:
+    container_name: r01.gw.side-a.corp
+    hostname: r01.gw.side-a.corp
+    extends:
+      service: router
+    profiles: [ "topo", "corp", "corp-sideA", "as65001" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.2
+      net_corp_local_a01:
+        ipv4_address: 193.168.1.2
+
+  r02_gw_side-a_corp:
+    container_name: r02.gw.side-a.corp
+    hostname: r02.gw.side-a.corp
+    extends:
+      service: router
+    profiles: [ "topo", "corp", "corp-sideA", "as65001" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.3
+      net_corp_local_a02:
+        ipv4_address: 193.168.2.2
+
+  r01_gw_side-b_corp:
+    container_name: r01.gw.side-b.corp
+    hostname: r01.gw.side-b.corp
+    extends:
+      service: router
+    profiles: [ "topo", "corp", "corp-sideB", "as65002" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.4
+      net_corp_local_b01:
+        ipv4_address: 193.168.3.2
+
+  r02_gw_side-b_corp:
+    container_name: r02.gw.side-b.corp
+    hostname: r02.gw.side-b.corp
+    extends:
+      service: router
+    profiles: [ "topo", "corp", "corp-sideB", "as65002" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.5
+      net_corp_local_b02:
+        ipv4_address: 193.168.4.2
+
+  r01_border_transit-a_isp:
+    container_name: r01.border.transit-a.isp
+    hostname: r01.border.transit-a.isp
+    extends:
+      service: router
+    profiles: [ "topo", "transA", "as100" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.6
+
+  r02_border_transit-a_isp:
+    container_name: r02.border.transit-a.isp
+    hostname: r02.border.transit-a.isp
+    extends:
+      service: router
+    profiles: [ "topo", "transA", "as100" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.7
+
+  r01_rr_transit-a_isp:
+    container_name: r01.rr.transit-a.isp
+    hostname: r01.rr.transit-a.isp
+    extends:
+      service: router
+    profiles: [ "topo", "transA", "as100" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.8
+
+  r01_nni_transit-a_isp:
+    container_name: r01.nni.transit-a.isp
+    hostname: r01.nni.transit-a.isp
+    extends:
+      service: router
+    profiles: [ "topo", "transA", "as100" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.9
+
+  r01_border_transit-b_isp:
+    container_name: r01.border.transit-b.isp
+    hostname: r01.border.transit-b.isp
+    extends:
+      service: router
+    profiles: [ "topo", "transB", "as200" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.10
+
+  r02_border_transit-b_isp:
+    container_name: r02.border.transit-b.isp
+    hostname: r02.border.transit-b.isp
+    extends:
+      service: router
+    profiles: [ "topo", "transB", "as200" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.11
+
+  r01_rr_transit-b_isp:
+    container_name: r01.rr.transit-b.isp
+    hostname: r01.rr.transit-b.isp
+    extends:
+      service: router
+    profiles: [ "topo", "transB", "as200" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.12
+
+  r01_nni_transit-b_isp:
+    container_name: r01.nni.transit-b.isp
+    hostname: r01.nni.transit-b.isp
+    extends:
+      service: router
+    profiles: [ "topo", "transB", "as200" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.13
+
+  r01_tor_cloud_web:
+    container_name: r01.tor.cloud.web
+    hostname: r01.tor.cloud.web
+    extends:
+      service: router
+    profiles: [ "topo", "cloud", "as500" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.14
+      net_cloud_local01:
+        ipv4_address: 173.30.0.2
+
+  r01_border_cloud_web:
+    container_name: r01.border.cloud.web
+    hostname: r01.border.cloud.web
+    extends:
+      service: router
+    profiles: [ "topo", "cloud", "as500" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.15
+
+  r02_border_cloud_web:
+    container_name: r02.border.cloud.web
+    hostname: r02.border.cloud.web
+    extends:
+      service: router
+    profiles: [ "topo", "cloud", "as500" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.16
+
+  vpnuser01_corp:
+    container_name: vpnuser01.corp
+    hostname: vpnuser01.corp
+    extends:
+      service: server
+    profiles: [ "topo", "corp", "corp-sideA", "as65001" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.17
+      net_corp_local_a01:
+        ipv4_address: 193.168.1.100
+
+  vpnuser02_corp:
+    container_name: vpnuser02.corp
+    hostname: vpnuser02.corp
+    extends:
+      service: server
+    profiles: [ "topo", "corp", "corp-sideA", "as65001" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.18
+      net_corp_local_a01:
+        ipv4_address: 193.168.1.200
+
+  vpnuser03_corp:
+    container_name: vpnuser03.corp
+    hostname: vpnuser03.corp
+    extends:
+      service: server
+    profiles: [ "topo", "corp", "corp-sideB", "as65002" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.19
+      net_corp_local_b01:
+        ipv4_address: 193.168.3.100
+
+  vpnuser04_corp:
+    container_name: vpnuser04.corp
+    hostname: vpnuser04.corp
+    extends:
+      service: server
+    profiles: [ "topo", "corp", "corp-sideB", "as65002" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.20
+      net_corp_local_b01:
+        ipv4_address: 193.168.3.200
+
+  webclient01_corp:
+    container_name: webclient01.corp
+    hostname: webclient01.corp
+    extends:
+      service: server
+    profiles: [ "topo", "corp", "corp-sideA", "as65001" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.21
+      net_corp_local_a02:
+        ipv4_address: 193.168.2.100
+
+  webclient02_corp:
+    container_name: webclient02.corp
+    hostname: webclient02.corp
+    extends:
+      service: server
+    profiles: [ "topo", "corp", "corp-sideB", "as65002" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.22
+      net_corp_local_b02:
+        ipv4_address: 193.168.4.100
+
+  server01_cloud_web:
+    container_name: server01.cloud.web
+    hostname: server01.cloud.web
+    extends:
+      service: server
+    profiles: [ "topo", "cloud", "as500" ]
+    expose:
+      - "8080"
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.23
+      net_cloud_local01:
+        ipv4_address: 173.30.0.100
+
+  ansible-tower_mgmt:
+    container_name: ansible-tower.mgmt
+    environment:
+      - SKIP_NETWORKS=1
+    hostname: ansible-tower.mgmt
+    image: atsbox
+    expose:
+      - "22"
+    volumes:
+      - "$PWD/ansible:/srv/ansible"
+    profiles: [ "topo", "cloud", "corp", "corp-sideA", "corp-sideB", "transA", \
+                "transB", "as100", "as200", "as65001", "as65002", "as500" ]
+    networks:
+      default:
+      net_mgmt:
+        ipv4_address: 10.255.0.25
+
+networks:
+  net_mgmt:
+    internal: true
+    ipam:
+      config:
+        - subnet: 10.255.0.0/27
+    driver_opts:
+      com.docker.network.bridge.name: br-mgmt
+      com.docker.network.container_iface_prefix: mgmt
+
+  net_corp_local_a01:
+    internal: true
+    ipam:
+      config:
+        - subnet: 193.168.1.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br-cla01
+      com.docker.network.container_iface_prefix: if-loc
+
+  net_corp_local_a02:
+    internal: true
+    ipam:
+      config:
+        - subnet: 193.168.2.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br-cla02
+      com.docker.network.container_iface_prefix: if-loc
+
+  net_corp_local_b01:
+    internal: true
+    ipam:
+      config:
+        - subnet: 193.168.3.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br-clb01
+      com.docker.network.container_iface_prefix: if-loc
+
+  net_corp_local_b02:
+    internal: true
+    ipam:
+      config:
+        - subnet: 193.168.4.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br-clb02
+      com.docker.network.container_iface_prefix: if-loc
+
+  net_cloud_local01:
+    internal: true
+    ipam:
+      config:
+        - subnet: 173.30.0.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br-wl01
+      com.docker.network.container_iface_prefix: if-loc
+

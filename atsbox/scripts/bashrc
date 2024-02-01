@@ -1,3 +1,0 @@
-#!/bin/bash
-
-export PS1="\[\e[33m\]\H\[\e[m\]:\[\e[34m\]\w\[\e[m\]\\$ "

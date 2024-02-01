@@ -1,0 +1,151 @@
+# vim: ts=2 : sts=2 : sw=2 : et :
+---
+name: l3vpn-clab
+prefix: ""
+
+mgmt:
+  network: net_mgmt
+  bridge: br-clab-mgmt
+  ipv4-subnet: 10.255.0.0/27
+
+topology:
+  defaults:
+    kind: linux
+    binds:
+      - containers/atsbox/keys/ansible-tower_mgmt.pub:/root/.ssh/authorized_keys:ro
+
+  nodes:
+    br-clab-cla01:
+      kind: bridge
+    br-clab-cla02:
+      kind: bridge
+    br-clab-clb01:
+      kind: bridge
+    br-clab-clb02:
+      kind: bridge
+    br-clab-wl01:
+      kind: bridge
+
+    r01.gw.side-a.corp:
+      image: frrbox:latest
+      group: as65001
+    r02.gw.side-a.corp:
+      image: frrbox:latest
+      group: as65001
+    r01.gw.side-b.corp:
+      image: frrbox:latest
+      group: as65002
+    r02.gw.side-b.corp:
+      image: frrbox:latest
+      group: as65002
+    r01.border.transit-a.isp:
+      image: frrbox:latest
+      group: as100
+    r02.border.transit-a.isp:
+      image: frrbox:latest
+      group: as100
+    r01.rr.transit-a.isp:
+      image: frrbox:latest
+      group: as100
+    r01.nni.transit-a.isp:
+      image: frrbox:latest
+      group: as100
+    r01.border.transit-b.isp:
+      image: frrbox:latest
+      group: as200
+    r02.border.transit-b.isp:
+      image: frrbox:latest
+      group: as200
+    r01.rr.transit-b.isp:
+      image: frrbox:latest
+      group: as200
+    r01.nni.transit-b.isp:
+      image: frrbox:latest
+      group: as200
+    r01.tor.cloud.web:
+      image: frrbox:latest
+      group: as500
+    r01.border.cloud.web:
+      image: frrbox:latest
+      group: as500
+    r02.border.cloud.web:
+      image: frrbox:latest
+      group: as500
+
+    vpnuser01.corp:
+      image: srvbox:latest
+      group: as65001
+    vpnuser02.corp:
+      image: srvbox:latest
+      group: as65001
+    vpnuser03.corp:
+      image: srvbox:latest
+      group: as65002
+    vpnuser04.corp:
+      image: srvbox:latest
+      group: as65002
+    webclient01.corp:
+      image: srvbox:latest
+      group: as65001
+    webclient02.corp:
+      image: srvbox:latest
+      group: as65002
+    server01.cloud.web:
+      image: srvbox:latest
+      group: as500
+    ansible-tower.mgmt:
+      image: atsbox:latest
+      group: mgmt
+      binds:
+        - ansible:/srv/ansible:rw
+
+  links:
+    - endpoints: ["r01.gw.side-a.corp:if-loc0", "br-clab-cla01:cla01-et-0"]
+    - endpoints: ["br-clab-cla01:cla01-et-1", "vpnuser01.corp:if-loc0"]
+    - endpoints: ["br-clab-cla01:cla01-et-2", "vpnuser02.corp:if-loc0"]
+    - endpoints: ["r02.gw.side-a.corp:if-loc0", "br-clab-cla02:cla02-et-0"]
+    - endpoints: ["br-clab-cla02:cla02-et-1", "webclient01.corp:if-loc0"]
+
+    - endpoints: ["r01.gw.side-b.corp:if-loc0", "br-clab-clb01:clb01-et-0"]
+    - endpoints: ["br-clab-clb01:clb01-et-1", "vpnuser03.corp:if-loc0"]
+    - endpoints: ["br-clab-clb01:clb01-et-2", "vpnuser04.corp:if-loc0"]
+    - endpoints: ["r02.gw.side-b.corp:if-loc0", "br-clab-clb02:clb02-et-0"]
+    - endpoints: ["br-clab-clb02:clb02-et-1", "webclient02.corp:if-loc0"]
+
+    - endpoints: ["r01.gw.side-a.corp:if-xcon0", "r02.gw.side-a.corp:if-xcon0"]
+    - endpoints: ["r01.gw.side-a.corp:if-extl0", "r01.border.transit-a.isp:if-extl0"]
+    - endpoints: ["r02.gw.side-a.corp:if-extl0", "r01.border.transit-a.isp:if-extl1"]
+
+    - endpoints: ["r01.gw.side-b.corp:if-xcon0", "r02.gw.side-b.corp:if-xcon0"]
+    - endpoints: ["r01.gw.side-b.corp:if-extl0", "r01.border.transit-b.isp:if-extl0"]
+    - endpoints: ["r02.gw.side-b.corp:if-extl0", "r01.border.transit-b.isp:if-extl1"]
+
+    - endpoints: ["r01.nni.transit-a.isp:if-nni0", "r01.nni.transit-b.isp:if-nni0"]
+
+    - endpoints: ["r01.rr.transit-a.isp:if-intl0", "r01.border.transit-a.isp:if-intl0"]
+    - endpoints: ["r01.rr.transit-a.isp:if-intl1", "r02.border.transit-a.isp:if-intl0"]
+    - endpoints: ["r01.rr.transit-a.isp:if-intl2", "r01.nni.transit-a.isp:if-intl0"]
+
+    - endpoints: ["r01.rr.transit-b.isp:if-intl0", "r01.border.transit-b.isp:if-intl0"]
+    - endpoints: ["r01.rr.transit-b.isp:if-intl1", "r02.border.transit-b.isp:if-intl0"]
+    - endpoints: ["r01.rr.transit-b.isp:if-intl2", "r01.nni.transit-b.isp:if-intl0"]
+
+    - endpoints: ["r01.border.transit-a.isp:if-intl1", "r02.border.transit-a.isp:if-intl1"]
+    - endpoints: ["r01.border.transit-a.isp:if-intl2", "r01.nni.transit-a.isp:if-intl1"]
+    - endpoints: ["r02.border.transit-a.isp:if-intl2", "r01.nni.transit-a.isp:if-intl2"]
+
+    - endpoints: ["r01.border.transit-b.isp:if-intl1", "r02.border.transit-b.isp:if-intl1"]
+    - endpoints: ["r01.border.transit-b.isp:if-intl2", "r01.nni.transit-b.isp:if-intl1"]
+    - endpoints: ["r02.border.transit-b.isp:if-intl2", "r01.nni.transit-b.isp:if-intl2"]
+
+    - endpoints: ["r01.border.cloud.web:if-extl0", "r02.border.transit-a.isp:if-extl0"]
+    - endpoints: ["r02.border.cloud.web:if-extl0", "r02.border.transit-a.isp:if-extl1"]
+
+    - endpoints: ["r01.border.cloud.web:if-extl1", "r02.border.transit-b.isp:if-extl0"]
+    - endpoints: ["r02.border.cloud.web:if-extl1", "r02.border.transit-b.isp:if-extl1"]
+
+    - endpoints: ["r01.tor.cloud.web:if-intl0", "r01.border.cloud.web:if-intl0"]
+    - endpoints: ["r01.tor.cloud.web:if-intl1", "r02.border.cloud.web:if-intl0"]
+
+    - endpoints: ["r01.tor.cloud.web:if-loc0", "br-clab-wl01:wl01-et-0"]
+    - endpoints: ["br-clab-wl01:wl01-et-1", "server01.cloud.web:if-loc0"]

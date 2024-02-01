@@ -1,0 +1,38 @@
+#!/bin/bash
+# ~ ansible .bashrc
+
+export PS1="\[\e[33m\]\H\[\e[m\]:\[\e[34m\]\w\[\e[m\]\\$ "
+
+afacts () {
+    local _host _filter
+    _host="${1:-}"
+    _filter="${2:"gather_subset=all"}"
+
+    ANSIBLE_STDOUT_CALLBACK=json ansible \
+        -m ansible.builtin.setup \
+        -a "${_filter}" \
+        "${_host}"
+}
+
+aplay () { ansible-playbook "${@}"; }
+
+asite () { ansible-playbook site.yml; }
+
+dasite () { ansible-playbook site.yml --extra-vars="skip_networks=${SKIP_NETWORKS:-0}"; }
+
+gosh () {
+    local _host="${1:-}"; shift
+
+    ssh "${_host}" "${@}"
+}
+
+rtrsh () {
+    local _host="${1:-}"; shift
+    local _cmd="${*:-}"
+
+    ssh -tt "${_host}" vtysh "${_cmd+"-c"}" "${_cmd}"
+}
+
+complete -W "$(sed -nr '/\[hosts\]/,/^$/{//!p}' /srv/ansible/inventory)" afacts
+complete -W "$(sed -nr '/\[hosts\]/,/^$/{//!p}' /srv/ansible/inventory)" bssh
+complete -W "$(sed -nr '/\[routers\]/,/^$/{//!p}' /srv/ansible/inventory)" rtrsh

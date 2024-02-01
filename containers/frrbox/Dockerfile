@@ -5,6 +5,7 @@ ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn
 
 RUN apt-get update && \
     apt-get install -y \
+        less \
         libpcre3-dev \
         apt-transport-https \
         ca-certificates \
@@ -28,6 +29,7 @@ RUN apt-get update && \
         dnsutils \
         inetutils-ping \
         openssh-server \
+        lldpd \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -s https://deb.frrouting.org/frr/keys.asc | gpg --dearmor --yes --batch --output "/etc/apt/trusted.gpg.d/frr-deb.gpg"
@@ -46,6 +48,7 @@ RUN chown -R frr:frr /etc/frr /var/run/frr
 COPY scripts/bashrc /root/.bashrc
 COPY frr/daemons /etc/frr/daemons
 COPY scripts/sshd_config /etc/ssh/sshd_config
+# COPY ../atsbox/keys/ansible-tower_mgmt.pub /root/.ssh/authorized_keys
 
 EXPOSE 179 22
 

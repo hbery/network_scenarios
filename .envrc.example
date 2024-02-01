@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# used in Makefile
+export BECOME_PASS="<your become password>"
