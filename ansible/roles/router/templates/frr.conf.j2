@@ -1,0 +1,434 @@
+# vim: ft=jinja.conf : ts=2 : sts=2 : sw=2 : et :
+# {{ ansible_managed }}
+{% set rtr_num = ansible_fqdn.split('.')[0] | trim('r') %}
+{% set rtr_role = ansible_fqdn.split('.')[1] %}
+{% set rtr_owner = '_'.join(ansible_fqdn.split('.')[2:]) %}
+{% set as_number = as_name2number[rtr_owner] %}
+{% set loop = loopbacks[ansible_fqdn] %}
+
+{# ---------------------------- GLOBAL_SETTINGS ----------------------------- #}
+frr version 9.1
+frr defaults traditional
+!
+log syslog informational
+log file /var/log/frr/frr.log
+log commands
+!
+debug mpls ldp zebra
+debug mpls ldp event
+debug mpls ldp errors
+debug mpls ldp messages recv
+debug mpls ldp messages sent
+debug mpls ldp discovery hello recv
+debug mpls ldp discovery hello sent
+debug mpls ldp labels
+debug mpls ldp sync
+!
+debug bgp zebra
+debug bgp nht
+debug bgp update in
+debug bgp update out
+debug bgp neighbor-events
+{% if 'r01.border.transit' in ansible_fqdn %}
+debug bgp vpn label
+debug bgp vpn leak-from-vrf
+debug bgp vpn leak-to-vrf
+debug bgp vpn rmap-event
+{% endif %}
+!
+debug zebra events
+debug zebra kernel
+debug zebra rib detailed
+debug zebra nht detailed
+debug zebra nexthop
+!
+debug bfd peer
+debug bfd zebra
+debug bfd network
+!
+no ipv6 forwarding
+ip forwarding
+!
+{# -------------------------------- HOSTNAME -------------------------------- #}
+hostname {{ ansible_fqdn }}
+!
+{# ---------------------------------- MPLS ---------------------------------- #}
+{% if 'transit' in rtr_owner %}
+{% set label_base = loop.split('.')[3].replace('0', '', 1) %}
+mpls label global-block {{ label_base }}00 {{ label_base }}99
+!
+mpls ldp
+  router-id {{ loop }}
+  dual-stack transport-connection prefer ipv4
+
+  address-family ipv4
+    discovery transport-address {{ loop }}
+    label local advertise explicit-null
+{%   for iface in neighbors[ansible_fqdn]["intra-as"] %}
+    interface {{ iface }}
+    exit
+{%   endfor %}
+  exit-address-family
+exit
+{% endif %}
+!
+{# ----------------------------- STATIC_ROUTES ------------------------------ #}
+{% if rtr_role == 'nni' %}
+{%   set ipaddr =  '.'.join(ranges['cross-as']['transit-a-b'][0].split('/')[0].split('.')[:3]) ~ ('.1' if 'transit-a' in rtr_owner else '.2') %}
+ip route {{ ipaddr }}/32 if-nni0 label {{ loop.split('.')[3].replace('0', '', 1) ~ 98 }}
+{% endif %}
+!
+{# ------------------------------- BGP:GLOBAL ------------------------------- #}
+router bgp {{ as_number }}
+  bgp router-id {{ loop }}
+{% if rtr_role == 'nni' %}
+  bgp labeled-unicast explicit-null
+  bgp disable-ebgp-connected-route-check
+{% endif %}
+  no bgp ebgp-requires-policy
+  no bgp default ipv4-unicast
+  no bgp network import-check
+{% if 'transit' in rtr_owner and 'rr' == rtr_role %}
+  bgp cluster-id {{ as_number }}
+{% endif %}
+
+{# ----------------------------- BGP:NEIGHBORS ------------------------------ #}
+  neighbor PEER_INNER peer-group
+  neighbor PEER_INNER remote-as {{ as_number }}
+{% if 'transit' in rtr_owner %}
+  neighbor PEER_INNER update-source {{ loopback_name }}
+  neighbor PEER_INNER capability extended-nexthop
+{% endif %}
+{% for neigh_k, neigh_v in neighbors[ansible_fqdn].bgp.internal | dictsort %}
+{%   if neigh_v == "loopback" %}
+  neighbor {{ loopbacks[neigh_k] }} peer-group PEER_INNER
+{%   else %}
+  neighbor {{ neigh_v }} peer-group PEER_INNER
+{%   endif %}
+{% endfor %}
+{% if as_number == 100 or as_number == 200 %}
+{%   if rtr_role == "border" and rtr_num == "01" %}
+{%   elif rtr_role == "border" and rtr_num == "02" %}
+  neighbor PEER_CLOUD peer-group
+  neighbor PEER_CLOUD remote-as 500
+{%     for neigh_k, neigh_v in neighbors[ansible_fqdn].bgp.external | dictsort %}
+  neighbor {{ neigh_v }} peer-group PEER_CLOUD
+{%     endfor %}
+{%   elif rtr_role in ["nni", "rr"] %}
+  neighbor PEER_ISP peer-group
+  neighbor PEER_ISP remote-as {{ 200 if as_number == 100 else 100 }}
+{%     for neigh_k, neigh_v in neighbors[ansible_fqdn].bgp.external | dictsort %}
+{%       if neigh_v == "loopback" %}
+  neighbor {{ loopbacks[neigh_k] }} peer-group PEER_ISP
+  neighbor PEER_ISP ebgp-multihop
+  neighbor PEER_ISP capability extended-nexthop
+  neighbor PEER_ISP update-source {{ loopback_name }}
+{%       else %}
+  neighbor {{ neigh_v }} peer-group PEER_ISP
+{%       endif %}
+{%     endfor %}
+{%   endif %}
+{% elif as_number == 500 %}
+{%   if rtr_role == "border" %}
+  neighbor TRANSIT_A peer-group
+  neighbor TRANSIT_A remote-as 100
+  neighbor TRANSIT_B peer-group
+  neighbor TRANSIT_B remote-as 200
+{%     for neigh_k, neigh_v in neighbors[ansible_fqdn].bgp.external | dictsort %}
+  neighbor {{ neigh_v }} peer-group {{ 'TRANSIT_A' if 'transit-a' in neigh_k else 'TRANSIT_B' }}
+{%     endfor %}
+{%   endif %}
+{% elif as_number == 65001 %}
+  neighbor TRANSIT_A peer-group
+  neighbor TRANSIT_A remote-as 100
+{%   for neigh_k, neigh_v in neighbors[ansible_fqdn].bgp.external | dictsort %}
+  neighbor {{ neigh_v }} peer-group TRANSIT_A
+{%   endfor %}
+{% elif as_number == 65002 %}
+  neighbor TRANSIT_B peer-group
+  neighbor TRANSIT_B remote-as 200
+{%   for neigh_k, neigh_v in neighbors[ansible_fqdn].bgp.external | dictsort %}
+  neighbor {{ neigh_v }} peer-group TRANSIT_B
+{%   endfor %}
+{% endif %}
+
+{# ---------------------------- BGP:IPV4_UNICAST ---------------------------- #}
+  address-family ipv4 unicast
+    neighbor PEER_INNER activate
+    neighbor PEER_INNER soft-reconfiguration inbound
+{% if as_number in [100, 200] %}
+    neighbor PEER_INNER next-hop-self
+{%   if 'rr' == rtr_role %}
+    neighbor PEER_INNER route-reflector-client
+    neighbor PEER_INNER route-map INOUT_ANY in
+    neighbor PEER_INNER route-map INOUT_ANY out
+{%   endif %}
+
+{%   if rtr_role == "border" and rtr_num == "02" %}
+    neighbor PEER_CLOUD activate
+    neighbor PEER_CLOUD soft-reconfiguration inbound
+{%   endif %}
+
+{%   if 'nni' == rtr_role %}
+{# FRR does not implement 'allocate-label all' to allocate labels for prefixes #}
+    # label vpn export allocation-mode per-nexthop
+    # label vpn export auto
+    neighbor PEER_INNER route-map NO_ACCEPT_FROM_RR in
+    neighbor PEER_INNER route-map NO_IBGP_VPN out
+{# NOTE: uncomment or remove
+    neighbor PEER_ISP activate
+    neighbor PEER_ISP route-map INOUT_ANY in
+    neighbor PEER_ISP route-map PASS_THROUGH_NNI out
+    neighbor PEER_ISP soft-reconfiguration inbound
+#}
+{%   endif %}
+
+{%   if 'rr' == rtr_role %}
+    redistribute isis route-map IBGP_LO
+{%   elif 'nni' == rtr_role %}
+    redistribute isis route-map IBGP_VPN
+{%   endif %}
+{% elif as_number == 500 %}
+{%   if rtr_role == "tor" %}
+{%     for ip_range in ranges.cloud.local %}
+    network {{ ip_range }}
+{%     endfor %}
+{%   else %}
+    neighbor TRANSIT_A activate
+    neighbor TRANSIT_B activate
+    neighbor TRANSIT_A soft-reconfiguration inbound
+    neighbor TRANSIT_B soft-reconfiguration inbound
+    neighbor TRANSIT_A route-map NO_EXPORT in
+    neighbor TRANSIT_B route-map NO_EXPORT in
+{%   endif %}
+
+{% elif as_number == 65001 %}
+    neighbor TRANSIT_A activate
+    neighbor TRANSIT_A route-map NO_EXPORT in
+    neighbor TRANSIT_A soft-reconfiguration inbound
+
+{%   for ip_range in ranges['corp-side-a']['local'] %}
+{%     if ((ip_range.split('.')[2] | int) % 2) == ((rtr_num | int) % 2) %}
+    network {{ ip_range }}
+{%     endif %}
+{%   endfor %}
+    network {{ loop }}/32
+{% elif as_number == 65002 %}
+    neighbor TRANSIT_B activate
+    neighbor TRANSIT_B route-map NO_EXPORT in
+    neighbor TRANSIT_B soft-reconfiguration inbound
+
+{%   for ip_range in ranges['corp-side-b']['local'] %}
+{%     if ((ip_range.split('.')[2] | int) % 2) == ((rtr_num | int) % 2) %}
+    network {{ ip_range }}
+{%     endif %}
+{%   endfor %}
+    network {{ loop }}/32
+{% endif %}
+  exit-address-family
+
+{# ------------------------ BGP:IPv4_LABELED_UNICAST ------------------------ #}
+{%   if rtr_role == "nni" %}
+  address-family ipv4 labeled-unicast
+    neighbor PEER_ISP activate
+    neighbor PEER_ISP route-map INOUT_ANY in
+    neighbor PEER_ISP route-map INOUT_ANY out
+    neighbor PEER_ISP route-map PASS_THROUGH_NNI out
+    neighbor PEER_ISP soft-reconfiguration inbound
+  exit-address-family
+{%   endif %}
+
+{# ------------------------------ BGP:IPV4_VPN ------------------------------ #}
+{% if 'transit' in rtr_owner %}
+{%   if 'rr' == rtr_role %}
+{%     set pe_border = loopbacks[('r01.border.' ~ rtr_owner.replace('_', '.'))] %}
+  address-family ipv4 vpn
+    neighbor {{ pe_border }} activate
+    neighbor {{ pe_border }} send-community both
+    neighbor {{ pe_border }} route-reflector-client
+    neighbor {{ pe_border }} soft-reconfiguration inbound
+
+    neighbor PEER_ISP activate
+    neighbor PEER_ISP send-community both
+    neighbor PEER_ISP soft-reconfiguration inbound
+    neighbor PEER_ISP route-map RT_REWRITE in
+    neighbor PEER_ISP route-map NH_UNCHANGED out
+  exit-address-family
+{%   elif 'border' == rtr_role and rtr_num == "01" %}
+  address-family ipv4 vpn
+    neighbor PEER_INNER activate
+    neighbor PEER_INNER soft-reconfiguration inbound
+  exit-address-family
+{%   endif %}
+{% endif %}
+exit
+!
+{# ------------------------- BGP:VRF == "CORP-VPN" -------------------------- #}
+{% if "transit" in rtr_owner and rtr_role == "border" and rtr_num == "01" %}
+{% set corp_client = 65001 if as_number == 100 else 65002 %}
+router bgp {{ as_number }} vrf {{ vrf_name }}
+  bgp router-id {{ loop }}
+  no bgp ebgp-requires-policy
+
+  neighbor PEER_CORP peer-group
+  neighbor PEER_CORP remote-as {{ corp_client }}
+{%   for neigh_k, neigh_v in neighbors[ansible_fqdn].bgp.external | dictsort %}
+  neighbor {{ neigh_v }} peer-group PEER_CORP
+{%   endfor %}
+
+  address-family ipv4 unicast
+    neighbor PEER_CORP activate
+    neighbor PEER_CORP soft-reconfiguration inbound
+
+    label vpn export {{ loop.split('.')[3] }}
+
+    rd vpn export {{ as_number }}:1
+    rt vpn both {{ as_number }}:1
+
+    import vpn
+    export vpn
+  exit-address-family
+exit
+{% endif %}
+!
+{# -------------------------- ROUTE-MAPS && LISTS --------------------------- #}
+ip prefix-list MATCH_ANY seq 5 permit any
+ip prefix-list MATCH_SELF seq 5 permit {{ loop }}/32
+{% if 'transit' in rtr_owner %}
+{%   set other_owner = 'transit-b.isp' if as_number == 100 else 'transit-a.isp' %}
+ip prefix-list MATCH_EVERY_ISP_LO seq 5 permit 10.0.0.0/24 ge 24 le 32
+ip prefix-list MATCH_OTHER_ISP seq 5 permit {{ loopbacks[('r01.rr.' ~ other_owner)] }}/32
+ip prefix-list MATCH_OTHER_ISP seq 10 permit {{ loopbacks[('r01.border.' ~ other_owner)] }}/32
+{% endif %}
+{% if rtr_role in ["nni", "rr"] %}
+ip prefix-list MATCH_ISP seq 5 permit {{ loopbacks[('r01.rr.' ~ rtr_owner.replace('_', '.'))] }}/32
+ip prefix-list MATCH_ISP seq 10 permit {{ loopbacks[('r01.border.' ~ rtr_owner.replace('_', '.'))] }}/32
+{%   set seqn = 5 %}
+{%   for ip_range in ranges['cloud']['local'] %}
+ip prefix-list MATCH_CLOUD seq {{ loop.index * seqn }} permit {{ ip_range }}
+{%   endfor %}
+!
+route-map PASS_THROUGH_NNI permit 10
+  match ip address prefix-list MATCH_ISP
+exit
+route-map PASS_THROUGH_NNI permit 20
+  match ip address prefix-list MATCH_SELF
+exit
+route-map PASS_THROUGH_NNI permit 30
+  match ip address prefix-list MATCH_CLOUD
+exit
+!
+route-map IBGP_OTHER_TRANSIT permit 10
+  match ip address prefix-list MATCH_OTHER_ISP
+exit
+!
+route-map NO_ACCEPT_FROM_RR deny 10
+  match ip address prefix-list MATCH_OTHER_ISP
+exit
+route-map NO_ACCEPT_FROM_RR deny 20
+  match ip address prefix-list MATCH_SELF
+exit
+route-map NO_ACCEPT_FROM_RR permit 99
+  match ip address prefix-list MATCH_ANY
+exit
+!
+route-map IBGP_VPN permit 10
+  match ip address prefix-list MATCH_ISP
+exit
+!
+route-map NO_IBGP_VPN deny 10
+  match ip address prefix-list MATCH_ISP
+exit
+route-map NO_IBGP_VPN permit 20
+  match ip address prefix-list MATCH_ANY
+exit
+{% endif %}
+!
+{% if "transit" in rtr_owner %}
+route-map IBGP_LO permit 10
+  match ip address prefix-list MATCH_EVERY_ISP_LO
+exit
+!
+{%   if rtr_role == "rr" %}
+bgp extcommunity-list expanded RT{{ 200 if as_number == 100 else 100 }} permit RT:{{ 200 if as_number == 100 else 100 }}:1
+{%     for ip_range in ranges[('corp-side-' ~ ('a' if as_number == 100 else 'b'))].local %}
+ip prefix-list MATCH_CORP_VRF seq {{ loop.index * 5 }} permit {{ ip_range }}
+{%     endfor %}
+!
+route-map RT_REWRITE permit 10
+  match extcommunity RT{{ 200 if as_number == 100 else 100 }}
+  set extcommunity none
+  set extcommunity rt {{ as_number }}:1
+exit
+!
+route-map NH_UNCHANGED permit 10
+  match ip address prefix-list MATCH_ANY
+  set ip next-hop unchanged
+exit
+{%   endif %}
+!
+{% endif %}
+route-map INOUT_ANY permit 10
+  match ip address prefix-list MATCH_ANY
+exit
+!
+route-map NO_EXPORT permit 10
+  set community additive no-export
+exit
+!
+{# ---------------------------------- ISIS ---------------------------------- #}
+router isis inside-as{{ as_number }}
+  log-adjacency-changes
+  net 49.{{ '%04d' % ( (as_number if as_number - 65000 < 0 else as_number - 65000) | int) }}.0000.0000.{{ '%04d' % (loop.split('.')[3] | int) }}.00
+  is-type level-2-only
+  metric-style wide
+{% if 'nni' == rtr_role %}
+  redistribute ipv4 bgp level-2 route-map IBGP_OTHER_TRANSIT
+{% endif %}
+exit
+!
+{# ------------------------------- INTERFACES ------------------------------- #}
+{% for iface in ansible_interfaces | sort %}
+{%   if iface != vrf_name %}
+interface {{ iface }} {{ "vrf " ~ vrf_name if "if-extl" in iface and 'r01.border.transit' in ansible_fqdn }}
+{%     if 'transit' in rtr_owner and iface in neighbors[ansible_fqdn]["intra-as"] %}
+  mpls enable
+{%     endif %}
+{%     if iface in neighbors[ansible_fqdn]["intra-as"] %}
+  ip router isis inside-as{{ as_number }}
+  isis circuit-type level-2-only
+  isis network point-to-point
+{# NOTE: uncomment or remove
+{%       if rtr_role == "nni" %}
+  mpls bgp l3vpn-multi-domain-switching
+{%       endif %}
+#}
+{%     elif iface in [loopback_name, "if-loc0"] %}
+  ip router isis inside-as{{ as_number }}
+  isis passive
+{%     elif "if-extl" in iface and 'r01.border.transit' in ansible_fqdn %}
+{%       for link in links %}
+{%         if 'corp_trans' in link.name %}
+{%           for end in link.endpoints %}
+{%             if ansible_fqdn == end.container and iface == end.iface %}
+  ip address {{ end.ip4 }}/30
+{%             endif %}
+{%           endfor %}
+{%         endif %}
+{%       endfor %}
+{%     elif iface == "if-nni0" and rtr_role == "nni" %}
+  ip address {{ '.'.join(ranges['cross-as']['transit-a-b'][0].split('/')[0].split('.')[:3]) ~ ('.1' if 'transit-a' in rtr_owner else '.2') }}/32
+  mpls bgp forwarding
+  mpls bgp l3vpn-multi-domain-switching
+{%     endif %}
+{#
+{%     if rtr_role == "nni" and iface in ["if-intl1", "if-intl2"] %}
+  shutdown
+{%     endif %}
+#}
+exit
+{%   endif %}
+!
+{% endfor %}
+!
+ip nht resolve-via-default

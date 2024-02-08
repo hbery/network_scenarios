@@ -1,0 +1,38 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Create VRF corp-vpn
+  when: '"r01.border" in ansible_fqdn'
+  block:
+    - name: Create VRF
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "ip link add {{ vrf_name }} type vrf table 10"
+
+    - name: IF-UP the VRF
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "ip link set dev {{ vrf_name }} up"
+
+    - name: Assign interfaces to VRF
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "ip link set {{ item }} master {{ vrf_name }}"
+      with_items:
+        - "if-extl0"
+        - "if-extl1"
+
+    - name: Set incoming rules for VRF
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "ip rule add iif {{ vrf_name }} table 10"
+
+    - name: Set outgoing rules for VRF
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "ip rule add oif {{ vrf_name }} table 10"
+
+    - name: Set unreachable label for VRF
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "ip route add vrf {{ vrf_name }} unreachable default metric 4278198272"

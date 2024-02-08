@@ -34,5 +34,5 @@ rtrsh () {
 }
 
 complete -W "$(sed -nr '/\[hosts\]/,/^$/{//!p}' /srv/ansible/inventory)" afacts
-complete -W "$(sed -nr '/\[hosts\]/,/^$/{//!p}' /srv/ansible/inventory)" bssh
+complete -W "$(sed -nr '/\[hosts\]/,/^$/{//!p}' /srv/ansible/inventory)" gosh
 complete -W "$(sed -nr '/\[routers\]/,/^$/{//!p}' /srv/ansible/inventory)" rtrsh

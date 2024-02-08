@@ -1,0 +1,16 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+local_nets:
+  r01.gw.side-a.corp: 193.168.1.0/24
+  r02.gw.side-a.corp: 193.168.2.0/24
+  r01.gw.side-b.corp: 193.168.3.0/24
+  r02.gw.side-b.corp: 193.168.4.0/24
+  r01.tor.cloud.web: 173.30.0.0/24
+  vpnuser01.corp: 193.168.1.0/24
+  vpnuser02.corp: 193.168.1.0/24
+  vpnuser03.corp: 193.168.3.0/24
+  vpnuser04.corp: 193.168.3.0/24
+  webclient01.corp: 193.168.2.0/24
+  webclient02.corp: 193.168.4.0/24
+  server01.cloud.web: 173.30.0.0/24

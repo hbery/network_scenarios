@@ -1,0 +1,85 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Create OR destroy containerlab
+  hosts: localhost
+  gather_facts: false
+  become: true
+
+  vars_prompt:
+    # choices: [ "create", "destroy" ]
+    - name: plaction
+      prompt: "Specify action [create|destroy] "
+      default: "create"
+      private: false
+
+  tasks:
+    - name: CREATE
+      when: (ci_plaction is defined and ci_plaction == "create") or (ci_plaction is not defined and (plaction | lower) in "create")
+      block:
+        - name: Local net bridges
+          block:
+            - name: Create virtual bridges
+              changed_when: false
+              ansible.builtin.command:
+                cmd: "ip link add {{ item }} type bridge"
+              with_items:
+                - "br-clab-cla01"
+                - "br-clab-cla02"
+                - "br-clab-clb01"
+                - "br-clab-clb02"
+                - "br-clab-wl01"
+
+            - name: Stand up virtual bridges
+              changed_when: false
+              ansible.builtin.command:
+                cmd: "ip link set dev {{ item }} up"
+              with_items:
+                - "br-clab-cla01"
+                - "br-clab-cla02"
+                - "br-clab-clb01"
+                - "br-clab-clb02"
+                - "br-clab-wl01"
+
+        - name: Deploy Containerlab
+          changed_when: false
+          ansible.builtin.command:
+            cmd: "clab deploy --reconfigure --topo ../../l3vpn.clab.yml"
+          environment:
+            CLAB_LABDIR_BASE: "../../"
+          register: clab_out
+
+        - ansible.builtin.debug: # noqa: name[missing]
+            var: clab_out.stdout_lines
+
+    - name: DESTROY
+      when: (ci_plaction is defined and ci_plaction == "destroy") or (ci_plaction is not defined and (plaction | lower) in "destroy")
+      block:
+        - name: Destroy Containerlab
+          changed_when: false
+          ansible.builtin.command:
+            cmd: "clab destroy --cleanup --topo ../../l3vpn.clab.yml"
+          environment:
+            CLAB_LABDIR_BASE: "../../"
+          register: clab_out
+
+        - ansible.builtin.debug: # noqa: name[missing]
+            var:
+              - clab_out.sterr_lines or ""
+              - clab_out.stdout_lines or ""
+
+        - name: Destroy virtual bridges
+          changed_when: false
+          ansible.builtin.command:
+            cmd: "ip link del {{ item }} type bridge"
+          with_items:
+            - "br-clab-cla01"
+            - "br-clab-cla02"
+            - "br-clab-clb01"
+            - "br-clab-clb02"
+            - "br-clab-wl01"
+
+        - name: Destroy mgmt docker bridge
+          community.docker.docker_network:
+            name: net_mgmt
+            state: absent

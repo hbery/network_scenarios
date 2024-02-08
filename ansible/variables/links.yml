@@ -1,0 +1,254 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+links:
+  - name: "net_corp_xconn_a01"
+    subnetv4: 193.168.100.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.gw.side-a.corp"
+        iface: "if-xcon0"
+        ip4: 193.168.100.1
+      - container: "r02.gw.side-a.corp"
+        iface: "if-xcon0"
+        ip4: 193.168.100.2
+  - name: "net_corp_xconn_b01"
+    subnetv4: 193.168.200.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.gw.side-b.corp"
+        iface: "if-xcon0"
+        ip4: 193.168.200.1
+      - container: "r02.gw.side-b.corp"
+        iface: "if-xcon0"
+        ip4: 193.168.200.2
+  - name: "net_corp_trans_a01"
+    subnetv4: 72.10.101.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.gw.side-a.corp"
+        iface: "if-extl0"
+        ip4: 72.10.101.1
+      - container: "r01.border.transit-a.isp"
+        iface: "if-extl0"
+        ip4: 72.10.101.2
+  - name: "net_corp_trans_a02"
+    subnetv4: 72.10.102.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r02.gw.side-a.corp"
+        iface: "if-extl0"
+        ip4: 72.10.102.1
+      - container: "r01.border.transit-a.isp"
+        iface: "if-extl1"
+        ip4: 72.10.102.2
+  - name: "net_corp_trans_b01"
+    subnetv4: 27.10.201.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.gw.side-b.corp"
+        iface: "if-extl0"
+        ip4: 27.10.201.1
+      - container: "r01.border.transit-b.isp"
+        iface: "if-extl0"
+        ip4: 27.10.201.2
+  - name: "net_corp_trans_b02"
+    subnetv4: 27.10.202.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r02.gw.side-b.corp"
+        iface: "if-extl0"
+        ip4: 27.10.202.1
+      - container: "r01.border.transit-b.isp"
+        iface: "if-extl1"
+        ip4: 27.10.202.2
+  - name: "net_trans_a_b_nni01"
+    subnetv4: 11.11.0.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.nni.transit-a.isp"
+        iface: "if-nni0"
+        ip4: 11.11.0.1
+      - container: "r01.nni.transit-b.isp"
+        iface: "if-nni0"
+        ip4: 11.11.0.2
+  - name: "net_trans_a01"
+    subnetv4: 72.0.12.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.rr.transit-a.isp"
+        iface: "if-intl0"
+        ip4: 72.0.12.1
+      - container: "r01.border.transit-a.isp"
+        iface: "if-intl0"
+        ip4: 72.0.12.2
+  - name: "net_trans_a02"
+    subnetv4: 72.0.13.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.rr.transit-a.isp"
+        iface: "if-intl1"
+        ip4: 72.0.13.1
+      - container: "r02.border.transit-a.isp"
+        iface: "if-intl0"
+        ip4: 72.0.13.2
+  - name: "net_trans_a03"
+    subnetv4: 72.0.14.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.rr.transit-a.isp"
+        iface: "if-intl2"
+        ip4: 72.0.14.1
+      - container: "r01.nni.transit-a.isp"
+        iface: "if-intl0"
+        ip4: 72.0.14.2
+  - name: "net_trans_a04"
+    subnetv4: 72.0.23.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.border.transit-a.isp"
+        iface: "if-intl1"
+        ip4: 72.0.23.1
+      - container: "r02.border.transit-a.isp"
+        iface: "if-intl1"
+        ip4: 72.0.23.2
+  - name: "net_trans_a05"
+    subnetv4: 72.0.24.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.border.transit-a.isp"
+        iface: "if-intl2"
+        ip4: 72.0.24.1
+      - container: "r01.nni.transit-a.isp"
+        iface: "if-intl1"
+        ip4: 72.0.24.2
+  - name: "net_trans_a06"
+    subnetv4: 72.0.34.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r02.border.transit-a.isp"
+        iface: "if-intl2"
+        ip4: 72.0.34.1
+      - container: "r01.nni.transit-a.isp"
+        iface: "if-intl2"
+        ip4: 72.0.34.2
+  - name: "net_trans_b01"
+    subnetv4: 27.0.12.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.rr.transit-b.isp"
+        iface: "if-intl0"
+        ip4: 27.0.12.1
+      - container: "r01.border.transit-b.isp"
+        iface: "if-intl0"
+        ip4: 27.0.12.2
+  - name: "net_trans_b02"
+    subnetv4: 27.0.13.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.rr.transit-b.isp"
+        iface: "if-intl1"
+        ip4: 27.0.13.1
+      - container: "r02.border.transit-b.isp"
+        iface: "if-intl0"
+        ip4: 27.0.13.2
+  - name: "net_trans_b03"
+    subnetv4: 27.0.14.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.rr.transit-b.isp"
+        iface: "if-intl2"
+        ip4: 27.0.14.1
+      - container: "r01.nni.transit-b.isp"
+        iface: "if-intl0"
+        ip4: 27.0.14.2
+  - name: "net_trans_b04"
+    subnetv4: 27.0.23.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.border.transit-b.isp"
+        iface: "if-intl1"
+        ip4: 27.0.23.1
+      - container: "r02.border.transit-b.isp"
+        iface: "if-intl1"
+        ip4: 27.0.23.2
+  - name: "net_trans_b05"
+    subnetv4: 27.0.24.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.border.transit-b.isp"
+        iface: "if-intl2"
+        ip4: 27.0.24.1
+      - container: "r01.nni.transit-b.isp"
+        iface: "if-intl1"
+        ip4: 27.0.24.2
+  - name: "net_trans_b06"
+    subnetv4: 27.0.34.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r02.border.transit-b.isp"
+        iface: "if-intl2"
+        ip4: 27.0.34.1
+      - container: "r01.nni.transit-b.isp"
+        iface: "if-intl2"
+        ip4: 27.0.34.2
+  - name: "net_cloud_trans_a01"
+    subnetv4: 72.20.100.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.border.cloud.web"
+        iface: "if-extl0"
+        ip4: 72.20.100.1
+      - container: "r02.border.transit-a.isp"
+        iface: "if-extl0"
+        ip4: 72.20.100.2
+  - name: "net_cloud_trans_a02"
+    subnetv4: 72.20.200.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r02.border.cloud.web"
+        iface: "if-extl0"
+        ip4: 72.20.200.1
+      - container: "r02.border.transit-a.isp"
+        iface: "if-extl1"
+        ip4: 72.20.200.2
+  - name: "net_cloud_trans_b01"
+    subnetv4: 27.20.100.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.border.cloud.web"
+        iface: "if-extl1"
+        ip4: 27.20.100.1
+      - container: "r02.border.transit-b.isp"
+        iface: "if-extl0"
+        ip4: 27.20.100.2
+  - name: "net_cloud_trans_b02"
+    subnetv4: 27.20.200.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r02.border.cloud.web"
+        iface: "if-extl1"
+        ip4: 27.20.200.1
+      - container: "r02.border.transit-b.isp"
+        iface: "if-extl1"
+        ip4: 27.20.200.2
+  - name: "net_cloud_tor01"
+    subnetv4: 173.20.1.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.border.cloud.web"
+        iface: "if-intl0"
+        ip4: 173.20.1.1
+      - container: "r01.tor.cloud.web"
+        iface: "if-intl0"
+        ip4: 173.20.1.2
+  - name: "net_cloud_tor02"
+    subnetv4: 173.20.2.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r02.border.cloud.web"
+        iface: "if-intl0"
+        ip4: 173.20.2.1
+      - container: "r01.tor.cloud.web"
+        iface: "if-intl1"
+        ip4: 173.20.2.2

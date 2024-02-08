@@ -1,0 +1,21 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Check routing table on routers
+  hosts: routers
+  gather_facts: false
+  become: false
+
+  tasks:
+    - name: Check routing table
+      ansible.builtin.command:
+        argv:
+          - "vtysh"
+          - -c
+          - "show ip route"
+      changed_when: false
+      register: vtysh_output
+
+    - name: Show output
+      ansible.builtin.debug:
+        msg: "{{ vtysh_output.stdout }}"

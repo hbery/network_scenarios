@@ -1,0 +1,35 @@
+# vim: ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Provide basics
+  hosts: 'hosts'
+  vars_files:
+    - "variables/loopbacks.yml"
+    - "variables/local_nets.yml"
+  roles:
+    - common
+
+- name: Configure routers
+  hosts: 'routers'
+  vars_files:
+    - "variables/loopbacks.yml"
+    - "variables/links.yml"
+    - "variables/local_nets.yml"
+    - "variables/neighbors.yml"
+    - "variables/as_numbers.yml"
+    - "variables/ip_ranges.yml"
+    - "variables/other.yml"
+  roles:
+    - router
+
+- name: Configure web-servers
+  hosts: 'web-cloud-servers'
+  roles:
+    - web-server
+
+- name: Configure servers
+  hosts: 'servers'
+  vars_files:
+    - "variables/local_nets.yml"
+  roles:
+    - server

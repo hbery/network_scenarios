@@ -27,9 +27,11 @@ RUN apt-get update && \
         mtr \
         traceroute \
         dnsutils \
-        inetutils-ping \
+        iputils-ping \
+        iputils-tracepath \
         openssh-server \
         lldpd \
+        jq \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -s https://deb.frrouting.org/frr/keys.asc | gpg --dearmor --yes --batch --output "/etc/apt/trusted.gpg.d/frr-deb.gpg"

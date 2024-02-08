@@ -1,0 +1,7 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Restart FRR
+  ansible.builtin.command:
+    cmd: "/usr/lib/frr/frr-reload"
+  changed_when: false

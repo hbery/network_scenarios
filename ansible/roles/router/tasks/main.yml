@@ -1,0 +1,63 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Assign addresses between routers
+  when: skip_networks is not defined or (skip_networks == 0)
+  ansible.builtin.include_tasks:
+    file: "interfaces.yml"
+  with_items: "{{ links }}"
+
+# - name: Ensure FRR is installed
+#   ansible.builtin.apt:
+#     name: "{{ item }}"
+#     state: present
+#   with_items:
+#     - frr
+#     # - frr-pythontools
+
+- name: Delete default route
+  changed_when: false
+  ansible.builtin.command:
+    cmd: "ip route del default"
+
+- name: Enable MPLS on transit routers
+  block:
+    - name: Configure file with kernel parameters
+      ansible.builtin.template:
+        src: "mpls-router.conf.j2"
+        dest: "/etc/sysctl.d/90-mpls-router.conf"
+        mode: "0644"
+
+    - name: Ensure mpls sysctl params have been loaded
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "sysctl -p /etc/sysctl.d/90-mpls-router.conf"
+
+- name: Setup VRFs on Provider Edge (Border) routers
+  ansible.builtin.include_tasks:
+    file: "vrf-setup.yml"
+  when: "'r01.border.transit' in ansible_fqdn"
+
+- name: Ensure proper daemons file
+  ansible.builtin.template:
+    src: "daemons"
+    dest: "/etc/frr/daemons"
+    mode: "0644"
+
+- name: Configure FRR config file
+  ansible.builtin.template:
+    src: "frr.conf.j2"
+    dest: "/etc/frr/frr.conf"
+    mode: "0644"
+  notify: Restart FRR
+
+- name: FRR STATUS
+  block:
+    - name: Show FRR status
+      changed_when: false
+      ansible.builtin.command:
+        cmd: /etc/init.d/frr status
+      register: frr_status_out
+
+    - ansible.builtin.debug: # noqa: name[missing]
+        var: frr_status_out.stdout_lines

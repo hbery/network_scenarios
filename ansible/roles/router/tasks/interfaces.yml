@@ -1,0 +1,26 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Configure link => SIDE-A {{ item.name }}
+  ansible.builtin.command:
+    argv:
+      - "ip"
+      - "address"
+      - "add"
+      - "{{ item.endpoints[0].ip4 }}/{{ item.netmaskv4 }}"
+      - "dev"
+      - "{{ item.endpoints[0].iface }}"
+  changed_when: false
+  when: ansible_fqdn == item.endpoints[0].container
+
+- name: Configure link => SIDE-B {{ item.name }}
+  ansible.builtin.command:
+    argv:
+      - "ip"
+      - "address"
+      - "add"
+      - "{{ item.endpoints[1].ip4 }}/{{ item.netmaskv4 }}"
+      - "dev"
+      - "{{ item.endpoints[1].iface }}"
+  changed_when: false
+  when: ansible_fqdn == item.endpoints[1].container

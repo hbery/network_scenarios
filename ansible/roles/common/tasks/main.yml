@@ -1,0 +1,50 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Check if host has FRR
+  ansible.builtin.stat:
+    path: "/usr/bin/frr"
+  register: frr_binary
+
+- name: Setup loopbacks
+  when: loopbacks[ansible_fqdn] is defined
+  block:
+    - name: Create dummy loopback interface
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "ip link add lo0 type dummy"
+
+    - name: Assign address to loopback interface
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "ip address add {{ loopbacks[ansible_fqdn] }}/32 dev lo0"
+
+    - name: Set loopback interface up
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "ip link set dev lo0 up"
+
+- name: Setup local subnets on routers and servers
+  when: local_nets[ansible_fqdn] is defined and (skip_networks is not defined or skip_networks == 0)
+  changed_when: false
+  ansible.builtin.command:
+    argv:
+      - "ip"
+      - "address"
+      - "add"
+      - "{%- if loopbacks[ansible_fqdn] is defined -%}
+        {{ local_nets[ansible_fqdn] | replace('.0/', '.1/') }}
+        {%- else -%}
+        {{ local_nets[ansible_fqdn] | replace('.0/', '.' ~ (100 + (ansible_fqdn.split('.')[0].split('0')[1] | int)) ~ '/') }}
+        {%- endif -%}"
+      - "dev"
+      - "if-loc0"
+
+# NOTE: V-- not possible on docker containers
+# - name: Set domain override for web server
+#   ansible.builtin.lineinfile:
+#     path: /etc/hosts
+#     state: present
+#     line: "173.30.0.100        test-webdomain.example.com"
+#     insertafter: EOF
+#   when: not frr_binary.stat.exists

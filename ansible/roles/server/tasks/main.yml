@@ -1,0 +1,22 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+# - name: Ensure packages are installed
+#   community.general.apk:
+#     name: "{{ item }}"
+#     state: present
+#     no_cache: true
+#   with_items:
+#     - curl
+
+- name: Set default route through routers, not mgmt
+  block:
+    - name: Delete old default gateway
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "ip route del default"
+
+    - name: Add new default route
+      changed_when: false
+      ansible.builtin.command:
+        cmd: "ip route add default via {{ '.'.join(ansible_if_loc0.ipv4.address.split('.')[:3]) ~ '.1' }} dev if-loc0"

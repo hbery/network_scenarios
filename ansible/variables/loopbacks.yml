@@ -1,0 +1,19 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+loopbacks:
+  r01.gw.side-a.corp: 10.0.0.11
+  r02.gw.side-a.corp: 10.0.0.12
+  r01.gw.side-b.corp: 10.0.0.21
+  r02.gw.side-b.corp: 10.0.0.22
+  r01.border.transit-a.isp: 10.0.0.101
+  r02.border.transit-a.isp: 10.0.0.102
+  r01.rr.transit-a.isp: 10.0.0.100
+  r01.nni.transit-a.isp: 10.0.0.105
+  r01.border.transit-b.isp: 10.0.0.201
+  r02.border.transit-b.isp: 10.0.0.202
+  r01.rr.transit-b.isp: 10.0.0.200
+  r01.nni.transit-b.isp: 10.0.0.205
+  r01.tor.cloud.web: 10.0.0.55
+  r01.border.cloud.web: 10.0.0.51
+  r02.border.cloud.web: 10.0.0.52

@@ -1,0 +1,12 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Start nginx
+  ansible.builtin.service:
+    name: nginx
+    state: started
+
+- name: Restart nginx
+  ansible.builtin.service:
+    name: nginx
+    state: restarted

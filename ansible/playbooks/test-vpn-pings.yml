@@ -1,0 +1,34 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Test VPN pings
+  hosts: vpn-servers
+  gather_facts: true
+  become: false
+
+  tasks:
+    - name: Trace connection to Side-A
+      when: ansible_host | regex_search("^vpnuser0(3|4).corp$")
+      block:
+        - name: Perform Trace
+          changed_when: false
+          ansible.builtin.shell:
+            cmd: "mtr -bzwec100 -a {{ ansible_if_loc0.ipv4.address }} -i.1 193.168.1.101 || true"
+          register: trace1_output
+
+        - name: Show output
+          ansible.builtin.debug:
+            var: trace1_output.stdout_lines
+
+    - name: Trace connection to Side-B
+      when: ansible_host | regex_search("^vpnuser0(1|2).corp$")
+      block:
+        - name: Perform Trace
+          changed_when: false
+          ansible.builtin.shell:
+            cmd: "mtr -bzwec100 -a {{ ansible_if_loc0.ipv4.address }} -i.1 193.168.3.103 || true"
+          register: trace2_output
+
+        - name: Show output
+          ansible.builtin.debug:
+            var: trace2_output.stdout_lines

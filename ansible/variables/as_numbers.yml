@@ -1,0 +1,9 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+as_name2number:
+  transit-a_isp: 100
+  transit-b_isp: 200
+  cloud_web: 500
+  side-a_corp: 65001
+  side-b_corp: 65002

@@ -1,0 +1,18 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Ensure nginx is installed
+  community.general.apk:
+    name: nginx
+    state: present
+    no_cache: true
+  notify: Start nginx
+
+- name: Configure nginx
+  ansible.builtin.template:
+    src: 'nginx.conf'
+    dest: '/etc/nginx/http.d/default.conf'
+    mode: '0644'
+    owner: 'nginx'
+    force: 'yes'
+  notify: Restart nginx

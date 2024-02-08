@@ -1,0 +1,20 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Check link to network namespace assignment
+  hosts: routers
+  gather_facts: true
+  become: false
+
+  tasks:
+    - name: LINK -> IFLINK
+      changed_when: false
+      ansible.builtin.shell:
+        cmd: |
+          for iface in {{ ansible_interfaces | join(' ') }}; do
+            printf "%s -> IFLINK:%d\n" $iface $(cat /sys/class/net/$iface/iflink)
+          done
+      register: l2ns_out
+
+    - ansible.builtin.debug: # noqa: name[missing]
+        var: l2ns_out.stdout_lines

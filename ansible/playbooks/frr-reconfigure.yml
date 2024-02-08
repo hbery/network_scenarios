@@ -1,0 +1,24 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Reconfigure FRR on routers
+  hosts: routers
+  vars_files:
+    - "../variables/loopbacks.yml"
+    - "../variables/links.yml"
+    - "../variables/local_nets.yml"
+    - "../variables/neighbors.yml"
+    - "../variables/as_numbers.yml"
+    - "../variables/ip_ranges.yml"
+    - "../variables/other.yml"
+
+  tasks:
+    - name: Configure FRR config file
+      ansible.builtin.template:
+        src: "../roles/router/templates/frr.conf.j2"
+        dest: "/etc/frr/frr.conf"
+        mode: "0644"
+
+    - name: Reload FRR
+      ansible.builtin.command: "/usr/lib/frr/frr-reload"
+      changed_when: false

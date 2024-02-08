@@ -1,0 +1,196 @@
+# vim: ft=yaml.ansible.jinja : ts=2 : sts=2 : sw=2 : 'et :'
+---
+
+neighbors:
+  r01.gw.side-a.corp:
+    bgp:
+      internal:
+        r02.gw.side-a.corp: '193.168.100.2'
+      external:
+        r01.border.transit-a.isp: '72.10.101.2'
+    intra-as:
+      - 'if-xcon0'
+
+  r02.gw.side-a.corp:
+    bgp:
+      internal:
+        r01.gw.side-a.corp: '193.168.100.1'
+      external:
+        r01.border.transit-a.isp: '72.10.102.2'
+    intra-as:
+      - 'if-xcon0'
+
+  r01.gw.side-b.corp:
+    bgp:
+      internal:
+        r02.gw.side-b.corp: '193.168.200.2'
+      external:
+        r01.border.transit-b.isp: '27.10.201.2'
+    intra-as:
+      - 'if-xcon0'
+
+  r02.gw.side-b.corp:
+    bgp:
+      internal:
+        r01.gw.side-b.corp: '193.168.200.1'
+      external:
+        r01.border.transit-b.isp: '27.10.202.2'
+    intra-as:
+      - 'if-xcon0'
+
+  r01.border.transit-a.isp:
+    bgp:
+      internal:
+        r01.rr.transit-a.isp: 'loopback'
+      external:
+        r01.gw.side-a.corp: '72.10.101.1'
+        r02.gw.side-a.corp: '72.10.102.1'
+      labeled:
+        r01.rr.transit-a.isp: '72.0.12.1'
+        # r02.border.transit-a.isp: '72.0.23.2'
+        # r01.nni.transit-a.isp: '72.0.24.2'
+    intra-as:
+      - 'if-intl0'
+      - 'if-intl1'
+      - 'if-intl2'
+
+  r02.border.transit-a.isp:
+    bgp:
+      internal:
+        r01.rr.transit-a.isp: 'loopback'
+      external:
+        r01.border.cloud.web: '72.20.100.1'
+        r02.border.cloud.web: '72.20.200.1'
+      labeled:
+        r01.rr.transit-a.isp: '72.0.13.1'
+        # r01.border.transit-a.isp: '72.0.23.1'
+        # r01.nni.transit-a.isp: '72.0.34.2'
+    intra-as:
+      - 'if-intl0'
+      - 'if-intl1'
+      - 'if-intl2'
+
+  r01.rr.transit-a.isp:
+    bgp:
+      internal:
+        r01.border.transit-a.isp: 'loopback'
+        r02.border.transit-a.isp: 'loopback'
+        r01.nni.transit-a.isp: 'loopback'
+      external:
+        r01.rr.transit-b.isp: 'loopback'
+      labeled:
+        r01.border.transit-a.isp: '72.0.12.2'
+        r02.border.transit-a.isp: '72.0.13.2'
+        r01.nni.transit-a.isp: '72.0.14.2'
+    intra-as:
+      - 'if-intl0'
+      - 'if-intl1'
+      - 'if-intl2'
+
+  r01.nni.transit-a.isp:
+    bgp:
+      internal:
+        r01.rr.transit-a.isp: 'loopback'
+      external:
+        r01.nni.transit-b.isp: '11.11.0.2'
+      labeled:
+        r01.rr.transit-a.isp: '72.0.14.1'
+        # r01.border.transit-a.isp: '72.0.24.1'
+        # r02.border.transit-a.isp: '72.0.34.1'
+    intra-as:
+      - 'if-intl0'
+      - 'if-intl1'
+      - 'if-intl2'
+
+  r01.border.transit-b.isp:
+    bgp:
+      internal:
+        r01.rr.transit-b.isp: 'loopback'
+      external:
+        r01.gw.side-b.corp: '27.10.201.1'
+        r02.gw.side-b.corp: '27.10.202.1'
+      labeled:
+        r01.rr.transit-b.isp: '27.0.12.1'
+        # r02.border.transit-b.isp: '27.0.23.2'
+        # r01.nni.transit-b.isp: '27.0.24.2'
+    intra-as:
+      - 'if-intl0'
+      - 'if-intl1'
+      - 'if-intl2'
+
+  r02.border.transit-b.isp:
+    bgp:
+      internal:
+        r01.rr.transit-b.isp: 'loopback'
+      external:
+        r01.border.cloud.web: '27.20.100.1'
+        r02.border.cloud.web: '27.20.200.1'
+      labeled:
+        r01.rr.transit-b.isp: '27.0.13.1'
+        # r01.border.transit-b.isp: '27.0.23.1'
+        # r01.nni.transit-b.isp: '27.0.34.2'
+    intra-as:
+      - 'if-intl0'
+      - 'if-intl1'
+      - 'if-intl2'
+
+  r01.rr.transit-b.isp:
+    bgp:
+      internal:
+        r01.border.transit-b.isp: 'loopback'
+        r02.border.transit-b.isp: 'loopback'
+        r01.nni.transit-b.isp: 'loopback'
+      external:
+        r01.rr.transit-a.isp: 'loopback'
+      labeled:
+        r01.border.transit-b.isp: '27.0.12.2'
+        r02.border.transit-b.isp: '27.0.13.2'
+        r01.nni.transit-b.isp: '27.0.14.2'
+    intra-as:
+      - 'if-intl0'
+      - 'if-intl1'
+      - 'if-intl2'
+
+  r01.nni.transit-b.isp:
+    bgp:
+      internal:
+        r01.rr.transit-b.isp: 'loopback'
+      external:
+        r01.nni.transit-a.isp: '11.11.0.1'
+      labeled:
+        r01.rr.transit-b.isp: '27.0.14.1'
+        # r01.border.transit-b.isp: '27.0.24.1'
+        # r02.border.transit-b.isp: '27.0.34.1'
+    intra-as:
+      - 'if-intl0'
+      - 'if-intl1'
+      - 'if-intl2'
+
+  r01.tor.cloud.web:
+    bgp:
+      internal:
+        r01.border.cloud.web: '173.20.1.1'
+        r02.border.cloud.web: '173.20.2.1'
+    intra-as:
+      - 'if-intl0'
+      - 'if-intl1'
+
+  r01.border.cloud.web:
+    bgp:
+      internal:
+        r01.tor.cloud.web: '173.20.1.2'
+      external:
+        r02.border.transit-a.isp: '72.20.100.2'
+        r02.border.transit-b.isp: '27.20.100.2'
+    intra-as:
+      - 'if-intl0'
+
+  r02.border.cloud.web:
+    bgp:
+      internal:
+        r01.tor.cloud.web: '173.20.2.2'
+      external:
+        r02.border.transit-a.isp: '72.20.200.2'
+        r02.border.transit-b.isp: '27.20.200.2'
+    intra-as:
+      - 'if-intl0'
