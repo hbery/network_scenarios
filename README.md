@@ -14,22 +14,24 @@ Scenario contains configuration for MPLS L3VPN.
 ## Prerequisities
 
 * docker-compose
+* containerlab
+* koko
+* ansible
 
 ## Running
 
-> Setup topology
+> run `make` to get all the options
 ```
-docker compose --profile topo up -d
+make
+# or
+make help
 ```
 
-> Provision
+> for now fully working is below
 ```
-# setup inventory
-./_scripts/setup-inventory.sh
+# to stand up
+make clab-up
 
-# enter ansible container
-docker exec -it ansible-tower_mgmt bash
-
-# execute
-ansible-playbook -i /srv/ansible/inventory.yml /srv/ansible/jobs/topo.yml
+# to destroy
+make clab-dn
 ```
