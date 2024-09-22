@@ -44,7 +44,7 @@
         - name: Deploy Containerlab
           changed_when: false
           ansible.builtin.command:
-            cmd: "clab deploy --reconfigure --topo ../../l3vpn.clab.yml"
+            cmd: "clab deploy --reconfigure --topo ../../l3vpn_c.clab.yml"
           environment:
             CLAB_LABDIR_BASE: "../../"
           register: clab_out
@@ -58,7 +58,7 @@
         - name: Destroy Containerlab
           changed_when: false
           ansible.builtin.command:
-            cmd: "clab destroy --cleanup --topo ../../l3vpn.clab.yml"
+            cmd: "clab destroy --cleanup --topo ../../l3vpn_c.clab.yml"
           environment:
             CLAB_LABDIR_BASE: "../../"
           register: clab_out

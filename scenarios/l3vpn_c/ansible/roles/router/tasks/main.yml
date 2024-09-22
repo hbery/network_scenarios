@@ -7,14 +7,6 @@
     file: "interfaces.yml"
   with_items: "{{ links }}"
 
-# - name: Ensure FRR is installed
-#   ansible.builtin.apt:
-#     name: "{{ item }}"
-#     state: present
-#   with_items:
-#     - frr
-#     # - frr-pythontools
-
 - name: Delete default route
   changed_when: false
   ansible.builtin.command:

@@ -1,14 +1,6 @@
 # vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
 ---
 
-# - name: Ensure packages are installed
-#   community.general.apk:
-#     name: "{{ item }}"
-#     state: present
-#     no_cache: true
-#   with_items:
-#     - curl
-
 - name: Set default route through routers, not mgmt
   block:
     - name: Delete old default gateway
