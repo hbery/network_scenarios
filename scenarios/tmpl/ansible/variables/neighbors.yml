@@ -1,0 +1,13 @@
+# vim: ft=yaml.ansible.jinja : ts=2 : sts=2 : sw=2 : 'et :'
+---
+
+neighbors:
+  r01.example:
+    bgp:
+      internal:
+        r02.example: '10.100.0.2'
+
+  r02.example:
+    bgp:
+      internal:
+        r01.example: '10.100.0.1'

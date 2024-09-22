@@ -1,0 +1,65 @@
+# vim: ft=jinja.conf : ts=2 : sts=2 : sw=2 : et :
+# {{ ansible_managed }}
+{% set rtr_owner = ansible_fqdn.split('.')[1] %}
+{% set as_number = as_name2number[rtr_owner] %}
+{% set loop = loopbacks[ansible_fqdn] %}
+
+{# ---------------------------- GLOBAL_SETTINGS ----------------------------- #}
+frr version 9.1
+frr defaults traditional
+!
+log syslog informational
+log file /var/log/frr/frr.log
+log commands
+!
+debug mpls ldp zebra
+debug mpls ldp event
+debug mpls ldp errors
+debug mpls ldp messages recv
+debug mpls ldp messages sent
+debug mpls ldp discovery hello recv
+debug mpls ldp discovery hello sent
+debug mpls ldp labels
+debug mpls ldp sync
+!
+debug bgp zebra
+debug bgp nht
+debug bgp update in
+debug bgp update out
+debug bgp neighbor-events
+!
+debug zebra events
+debug zebra kernel
+debug zebra rib detailed
+debug zebra nht detailed
+debug zebra nexthop
+!
+debug bfd peer
+debug bfd zebra
+debug bfd network
+!
+no ipv6 forwarding
+ip forwarding
+!
+{# -------------------------------- HOSTNAME -------------------------------- #}
+hostname {{ ansible_fqdn }}
+!
+{# ---------------------------------- MPLS ---------------------------------- #}
+{# ----------------------------- STATIC_ROUTES ------------------------------ #}
+{# ------------------------------- BGP:GLOBAL ------------------------------- #}
+router bgp {{ as_number }}
+  bgp router-id {{ loop }}
+{# ----------------------------- BGP:NEIGHBORS ------------------------------ #}
+  neighbor PEER_INNER peer-group
+  neighbor PEER_INNER remote-as {{ as_number }}
+{% for neigh_k, neigh_v in neighbors[ansible_fqdn].bgp.internal | dictsort %}
+  neighbor {{ neigh_v }} peer-group PEER_INNER
+{% endfor %}
+{# ---------------------------- BGP:IPV4_UNICAST ---------------------------- #}
+{# ------------------------ BGP:IPv4_LABELED_UNICAST ------------------------ #}
+{# ------------------------------ BGP:IPV4_VPN ------------------------------ #}
+{# -------------------------------- BGP:VRF --------------------------------- #}
+exit
+{# -------------------------- ROUTE-MAPS && LISTS --------------------------- #}
+{# ---------------------------------- ISIS ---------------------------------- #}
+{# ------------------------------- INTERFACES ------------------------------- #}

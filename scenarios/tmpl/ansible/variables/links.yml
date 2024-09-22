@@ -1,0 +1,14 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+links:
+  - name: "net_external01"
+    subnetv4: 10.100.0.0
+    netmaskv4: 30
+    endpoints:
+      - container: "r01.example"
+        iface: "if-ext0"
+        ip4: 10.100.0.1
+      - container: "r02.example"
+        iface: "if-ext0"
+        ip4: 10.100.0.2

@@ -1,0 +1,24 @@
+# vim: ft=docker-compose : ts=2 : sts=2 : sw=2 : et :
+---
+version: '3.8'
+name: tmpl-topology-networks-override
+
+services:
+  r01_example:
+    networks:
+      net_external01:
+        ipv4_address: 10.100.0.2
+  r02_example:
+    networks:
+      net_external01:
+        ipv4_address: 10.100.0.3
+
+networks:
+  net_external01:
+    internal: true
+    ipam:
+      config:
+        - subnet: 10.100.0.0/29
+    driver_opts:
+      com.docker.network.bridge.name: br-ex01
+      com.docker.network.container_iface_prefix: if-ext

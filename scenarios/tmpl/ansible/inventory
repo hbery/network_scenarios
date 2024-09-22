@@ -1,0 +1,15 @@
+# vim: ft=ansible_hosts
+[hosts]
+r01.example
+r02.example
+server01.example
+
+[ansible-box]
+ansible-tower.mgmt
+
+[servers]
+server01.example
+
+[routers]
+r01.example
+r02.example

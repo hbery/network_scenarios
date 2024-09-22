@@ -1,0 +1,6 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+local_nets:
+  r01.example: 193.168.0.0/24
+  server01.example: 193.168.0.0/24

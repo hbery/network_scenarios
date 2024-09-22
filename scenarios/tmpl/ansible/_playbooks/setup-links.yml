@@ -1,0 +1,39 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Create OR destroy links
+  hosts: localhost
+  gather_facts: false
+  become: true
+
+  vars_files:
+    - ../variables/links.yml
+  vars_prompt:
+    # choices: [ "create", "destroy" ]
+    - name: plaction
+      prompt: "Specify action [create|destroy] "
+      default: "create"
+      private: false
+
+  tasks:
+    - name: Create links between containers
+      when: (ci_plaction is defined and ci_plaction == "create") or (ci_plaction is not defined and (plaction | lower) in "create")
+      changed_when: false
+      ansible.builtin.command:
+        argv:
+          - "koko"
+          - -d
+          - "{{ item.endpoints[0].container }},{{ item.endpoints[0].iface }},{{ item.endpoints[0].ip4 }}/{{ item.netmaskv4 }}"
+          - -d
+          - "{{ item.endpoints[1].container }},{{ item.endpoints[1].iface }},{{ item.endpoints[1].ip4 }}/{{ item.netmaskv4 }}"
+      with_items: "{{ links }}"
+
+    - name: Destroy links between containers
+      when: (ci_plaction is defined and ci_plaction == "destroy") or (ci_plaction is not defined and (plaction | lower) in "destroy")
+      changed_when: false
+      ansible.builtin.command:
+        argv:
+          - "koko"
+          - -D
+          - "{{ item.endpoints[0].container }},{{ item.endpoints[0].iface }}"
+      with_items: "{{ links }}"
