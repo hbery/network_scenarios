@@ -2,105 +2,100 @@
 ##Makefile :: network_scenarios
 ##---
 
+SHELL = bash
 ROOT := $(shell git rev-parse --show-toplevel)
 
-.PHONY: help clab-up clab-dn compose-up compose-dn netcompose-up netcompose-dn containers ansible-env clean-env
+.PHONY: help run list vmup vmdn vmsh vmsync containers ansible-env clean-env
 .ONESHELL:
 .DEFAULT: help
 .SILENT:
 
+PROJECT ?= l3vpn_c
 REBUILD := no
+
+# labvm specific
+LABVM_USER ?= net-admin
+LABVM_PASS ?= netscenarios
+LABVM_HOST ?= piraeus
+LABVM_SSH_CONFIG ?= $(ROOT)/.network-scenarios.ssh_config
 
 ##usage: make [command]
 ##
 
-## help             Print this help
+##  help             Print this help
 help: Makefile
 	@sed -n 's/^##//p' $<
 
 ##---
 
-## clab-up          Deploy Containerlab
-clab-up: docker-prereq clab-prereq ansible-prereq
-	echo "" | ANSIBLE_DISPLAY_SKIPPED_HOSTS=0 \
-		ANSIBLE_STDOUT_CALLBACK=yaml \
-		ansible-playbook "$(ROOT)/ansible/_playbooks/setup-containerlab.yml" \
-		--extra-vars="{ 'ansible_become_password': '$${BECOME_PASS}', 'ci_plaction': 'create' }"
-	docker exec -it ansible-tower.mgmt ansible-playbook site.yml
+include $(ROOT)/common/Makefile.common.mk
 
-## clab-dn          Destroy Containerlab
-clab-dn: docker-prereq clab-prereq ansible-prereq
-	echo "" | ANSIBLE_DISPLAY_SKIPPED_HOSTS=0 \
-		ANSIBLE_STDOUT_CALLBACK=yaml \
-		ansible-playbook "$(ROOT)/ansible/_playbooks/setup-containerlab.yml" \
-		--extra-vars="{ 'ansible_become_password': '$${BECOME_PASS}', 'ci_plaction': 'destroy' }"
+##  run-<CMD>        Run `make` <CMD> in specific scenario (`run-help` shows available options)
+run-%:
+	$(MAKE) -C scenarios/$(PROJECT) $(subst run-,,$@)
 
-## compose-up       Deploy project as docker compose (without using docker networks)
-compose-up: docker-prereq koko-prereq ansible-prereq
-	docker compose --profile=topo --file compose.yml up -d
-	ANSIBLE_DISPLAY_SKIPPED_HOSTS=0 \
-		ANSIBLE_STDOUT_CALLBACK=yaml \
-		ansible-playbook -K "$(ROOT)/ansible/_playbooks/setup-links.yml" \
-		--extra-vars="{ 'ansible_become_password': '$${BECOME_PASS}', 'ci_plaction': 'create' }"
-
-## compose-dn       Destroy project as docker compose (without using docker networks)
-compose-dn: docker-prereq koko-prereq ansible-prereq
-	ANSIBLE_DISPLAY_SKIPPED_HOSTS=0 \
-		ANSIBLE_STDOUT_CALLBACK=yaml \
-		ansible-playbook -K "$(ROOT)/ansible/_playbooks/setup-links.yml" \
-		--extra-vars="{ 'ansible_become_password': '$${BECOME_PASS}', 'ci_plaction': 'destroy' }"
-	docker compose --profile=topo --file compose.yml down
-
-## netcompose-up    Deploy project as docker compose (with using docker networks)
-netcompose-up: docker-prereq
-	docker compose --profile=topo --file compose.yml --file compose.networks.yml up -d
-
-## netcompose-dn    Destroy project as docker compose (with using docker networks)
-netcompose-dn: docker-prereq
-	docker compose --profile=topo --file compose.yml --file compose.networks.yml down
+##  list             List possible scenarios
+list:
+	echo "projects:"
+	while read -r proj; do echo "  * $$proj"; done  < <(ls -1 scenarios/)
 
 ##---
 
-## containers       (Re)Build containers for the lab
+##  vmup             Provision Lab VM
+vmup: virtualization-prereq vagrant-prereq vm-is-down-prereq
+	vagrant up
+
+##  vmdn             Destroy Lab VM
+vmdn: vm-is-up-prereq
+	vagrant destroy --force
+	rm -f "$(LABVM_SSH_CONFIG)"
+
+##  vmsh             Login to Lab VM as `net-admin`
+vmsh: vm-is-up-prereq vm-sshconfig-prereq
+	ssh -F "$(LABVM_SSH_CONFIG)" "$(LABVM_USER)@$(LABVM_HOST)"
+
+##  vmcp             Sync code from host to LabVM
+vmcp: vm-sshconfig-prereq
+	rsync \
+		--archive --compress --verbose \
+		--exclude=".vagrant/" \
+		--exclude="$(shell basename "$(LABVM_SSH_CONFIG)")" \
+		--rsh="ssh -F $(LABVM_SSH_CONFIG)" \
+		"$(ROOT)/" \
+		"$(LABVM_USER)@$(LABVM_HOST):/srv/"
+
+##  vm-setup         Setup LabVM `piraeus` [*]
+#     * only works with default setup
+vm-setup: inside-labvm-prereq
+	echo 'export BECOME_PASS="$(LABVM_PASS)"' > .envrc
+	direnv allow
+	$(MAKE) prepare-mpls
+	$(MAKE) containers
+	$(MAKE) ansible-env
+
+##---
+
+##  containers       (Re)Build containers for the lab
 containers: docker-prereq
-	./scripts/build_containers.sh
+	./common/scripts/build_containers.sh
 
-## prepare-mpls     Setup kernel modules and options for MPLS routing (as `sudo`)
+##  prepare-mpls     Setup kernel modules and options for MPLS routing (as `sudo`)
 prepare-mpls:
-	sudo ./scripts/prepare_mpls.sh
+	sudo ./common/scripts/prepare_mpls.sh
 
-## ansible-env      (Re)Build Ansible python environment; `make REBUILD=yes ansible-env` to rebuild virtualenv
+##  ansible-env      (Re)Build Ansible python environment; `make REBUILD=yes ansible-env` to rebuild virtualenv
 ansible-env:
-	REBUILD=$(REBUILD) ./scripts/build_python_environment.sh
+	REBUILD=$(REBUILD) ./common/scripts/build_python_environment.sh
 
-## clean-env        Clean ansible-env python virtualenv
+##  clean-env        Clean ansible-env python virtualenv
 clean-env:
-	rm -rf ansible-env/
-
+	rm -rf $(ROOT)/ansible-env/
 
 ##
-# --- PREREQUISITIES --- #
-docker-prereq:
-	if ! command -v docker 2>&1 >/dev/null; then
-		echo "Docker is not installed on your system"
-		exit 1
-	fi
 
-ansible-prereq:
-	if ! command -v ansible-playbook 2>&1 >/dev/null; then
-		echo "Source ansible environment"
-		exit 2
+# --- ADDITIONAL PREREQUISITIES --- #
+vm-sshconfig-prereq:
+	if [[ ! -f "$(LABVM_SSH_CONFIG)" ]]; then
+		vagrant ssh-config > "$(LABVM_SSH_CONFIG)"
+		sed -i 's/User vagrant/User net-admin/' "$(LABVM_SSH_CONFIG)"
 	fi
-
-clab-prereq:
-	if ! command -v clab 2>&1 >/dev/null; then
-		echo "Containerlab is not on your system"
-		exit 3
-	fi
-
-koko-prereq:
-	if ! command -v koko 2>&1 >/dev/null; then
-		echo "Ensure koko is installed on your system"
-		exit 4
-	fi
-
