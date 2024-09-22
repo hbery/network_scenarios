@@ -39,12 +39,3 @@
         {%- endif -%}"
       - "dev"
       - "if-loc0"
-
-# NOTE: V-- not possible on docker containers
-# - name: Set domain override for web server
-#   ansible.builtin.lineinfile:
-#     path: /etc/hosts
-#     state: present
-#     line: "173.30.0.100        test-webdomain.example.com"
-#     insertafter: EOF
-#   when: not frr_binary.stat.exists

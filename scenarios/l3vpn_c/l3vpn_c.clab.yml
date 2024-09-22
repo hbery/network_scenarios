@@ -1,6 +1,6 @@
 # vim: ts=2 : sts=2 : sw=2 : et :
 ---
-name: l3vpn-clab
+name: l3vpn-c-clab
 prefix: ""
 
 mgmt:
@@ -12,7 +12,7 @@ topology:
   defaults:
     kind: linux
     binds:
-      - containers/atsbox/keys/ansible-tower_mgmt.pub:/root/.ssh/authorized_keys:ro
+      - ../../containers/atsbox/keys/ansible-tower_mgmt.pub:/root/.ssh/authorized_keys:ro
     sysctls:
       net.ipv4.ip_forward: 1
       net.ipv6.conf.all.forwarding: 1
