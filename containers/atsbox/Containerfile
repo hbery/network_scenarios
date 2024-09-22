@@ -21,7 +21,7 @@ EXPOSE 22
 
 COPY scripts/bashrc /root/.bashrc
 COPY scripts/ansible.cfg /etc/ansible/ansible.cfg
-COPY --chown=root:root keys /root/.ssh
+COPY --chown=root:root --chmod=600 keys /root/.ssh
 
 RUN mkdir -p /srv/ansible
 WORKDIR /srv/ansible
