@@ -1,0 +1,6 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+loopbacks:
+  r01.example: 10.0.0.1
+  r02.example: 10.0.0.2

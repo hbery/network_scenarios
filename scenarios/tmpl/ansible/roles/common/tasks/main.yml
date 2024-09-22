@@ -1,0 +1,6 @@
+# vim: ft=yaml.ansible : ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Common task
+  ansible.builtin.debug:
+    msg: "Common task to perform on all hosts"

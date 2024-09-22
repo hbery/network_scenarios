@@ -1,0 +1,25 @@
+# vim: ts=2 : sts=2 : sw=2 : et :
+---
+
+- name: Provide basics
+  hosts: 'hosts'
+  vars_files:
+    - "variables/loopbacks.yml"
+    - "variables/local_nets.yml"
+  roles:
+    - common
+
+- name: Configure routers
+  hosts: 'routers'
+  vars_files:
+    - "variables/links.yml"
+    - "variables/as_numbers.yml"
+    - "variables/loopbacks.yml"
+    - "variables/neighbors.yml"
+  roles:
+    - router
+
+- name: Configre servers
+  hosts: 'servers'
+  roles:
+    - server

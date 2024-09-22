@@ -1,0 +1,98 @@
+# vim: ft=docker-compose : ts=2 : sts=2 : sw=2 : et :
+---
+version: '3.8'
+name: tmpl-topology
+
+x-ansible-pubkey: &ansible-pubkey
+  volumes:
+    - "$PWD/../../containers/atsbox/keys/ansible-tower_mgmt.pub:/root/.ssh/authorized_keys:ro"
+
+services:
+  router:
+    cap_add:
+      - CAP_NET_RAW
+      - NET_ADMIN
+      - SYS_ADMIN
+    image: frrbox
+    privileged: false
+    profiles: ["base"]
+    expose:
+      - "179"
+      - "22"
+    <<: *ansible-pubkey
+
+  server:
+    image: srvbox
+    profiles: ["base"]
+    expose:
+      - "22"
+    <<: *ansible-pubkey
+
+  r01_example:
+    container_name: r01.example
+    hostname: r01.example
+    extends:
+      service: router
+    profiles: [ "topo" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.2
+      net_example:
+        ipv4_address: 193.168.0.2
+
+  r02_example:
+    container_name: r02.example
+    hostname: r02.example
+    extends:
+      service: router
+    profiles: [ "topo" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.3
+
+  server01_example:
+    container_name: server01.example
+    hostname: server01.example
+    extends:
+      service: server
+    profiles: [ "topo" ]
+    networks:
+      net_mgmt:
+        ipv4_address: 10.255.0.4
+      net_example:
+        ipv4_address: 193.168.0.3
+
+  ansible-tower_mgmt:
+    container_name: ansible-tower.mgmt
+    environment:
+      - SKIP_NETWORKS=1
+    hostname: ansible-tower.mgmt
+    image: atsbox
+    expose:
+      - "22"
+    volumes:
+      - "$PWD/ansible:/srv/ansible"
+    profiles: [ "topo" ]
+    networks:
+      default:
+      net_mgmt:
+        ipv4_address: 10.255.0.254
+
+networks:
+  net_mgmt:
+    internal: true
+    ipam:
+      config:
+        - subnet: 10.255.0.0/27
+    driver_opts:
+      com.docker.network.bridge.name: br-mgmt
+      com.docker.network.container_iface_prefix: mgmt
+
+  net_example:
+    internal: true
+    ipam:
+      config:
+        - subnet: 193.168.0.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br-ex01
+      com.docker.network.container_iface_prefix: if-loc
