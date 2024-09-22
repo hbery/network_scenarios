@@ -1,4 +1,4 @@
 #!/bin/bash
 
-# used in Makefile
-export BECOME_PASS="<your become password>"
+# used in Makefile | not necessary if you run project as root
+export BECOME_PASS="<your sudo password>"

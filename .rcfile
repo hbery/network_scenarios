@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export NETWORK_SCENARIOS_ROOT="/srv"
+
 db () {
     docker exec -it "${1}" bash
 }
@@ -25,10 +27,14 @@ dvf () {
 }
 
 aplay () {
-    ANSIBLE_DISPLAY_SKIPPED_HOSTS=0 ANSIBLE_STDOUT_CALLBACK=yaml ansible-playbook -K "${1}"
+    ANSIBLE_CONFIG="${NETWORK_SCENARIOS_ROOT}/ansible.cfg" \
+    ANSIBLE_DISPLAY_SKIPPED_HOSTS=0 \
+    ANSIBLE_STDOUT_CALLBACK=yaml \
+        ansible-playbook -K "${1}"
 }
 
-alias dans="db ansible-tower.mgmt"
+alias dans='db ansible-tower.mgmt'
+alias env_activate='source ${NETWORK_SCENARIOS_ROOT}/ansible-env/bin/activate'
 
 complete -W "$(docker ps --format '{{.Names}}' | xargs)" db
 complete -W "$(docker ps --filter 'ancestor=frrbox' --format '{{.Names}}' | xargs)" dv

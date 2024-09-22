@@ -1,6 +1,9 @@
 .envrc
 .direnv/
+.vagrant/
+
 _config/
 *.bak
+
 ansible-env/
 clab*/
