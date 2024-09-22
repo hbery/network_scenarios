@@ -5,7 +5,7 @@
 _mpls_sysctl_file="${MPLS_SYSCTL_FILE:-/etc/sysctl.d/90-mpls-router.conf}"
 
 
-if [ $(id -u) -ne 0 ]; then
+if [[ $(id -u) -ne 0 ]]; then
     echo "This script must be run as sudo.."
     exit 1
 fi

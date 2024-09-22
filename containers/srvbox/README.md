@@ -5,7 +5,7 @@ Server docker container
 ## Build
 
 ```
-docker build -t srvbox:latest .
+docker build -t srvbox:latest -f Containerfile .
 ```
 
 ## Running

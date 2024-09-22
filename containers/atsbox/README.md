@@ -5,7 +5,7 @@ Ansible docker container
 ## Build
 
 ```
-docker build -t atsbox:latest .
+docker build -t atsbox:latest -f Containerfile .
 ```
 
 ## Running

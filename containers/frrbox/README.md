@@ -5,7 +5,7 @@ Build for FRR docker container
 ## Build
 
 ```
-docker build -t frrbox:latest .
+docker build -t frrbox:latest -f Containerfile .
 ```
 
 ## Running

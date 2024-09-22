@@ -30,7 +30,7 @@ rtrsh () {
     local _host="${1:-}"; shift
     local _cmd="${*:-}"
 
-    ssh -tt "${_host}" vtysh "${_cmd+"-c"}" "${_cmd}"
+    ssh -tt "${_host}" vtysh "${_cmd:+"-c"}" "${_cmd}"
 }
 
 complete -W "$(sed -nr '/\[hosts\]/,/^$/{//!p}' /srv/ansible/inventory)" afacts
