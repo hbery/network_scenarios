@@ -4,7 +4,7 @@
 PROJECT_NAME="<YOUR-SCENARIO-NAME>"
 ```
 
-[^1] all commands from repository root
+[^1]: all commands from repository root
 
 ## Copy template to new directory
 
