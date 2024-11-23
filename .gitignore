@@ -4,6 +4,7 @@
 
 _config/
 *.bak
+.network-scenarios.ssh_config
 
 ansible-env/
 clab*/

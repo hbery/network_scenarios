@@ -5,22 +5,32 @@
 SHELL = bash
 ROOT := $(shell git rev-parse --show-toplevel)
 
-.PHONY: help run list vmup vmdn vmsh vmsync containers ansible-env clean-env
+.PHONY: help run-% list vmup vmdn vmsh vmcp vm-setup containers prepare-mpls ansible-env clean-env
 .ONESHELL:
 .DEFAULT: help
 .SILENT:
 
+##usage: make [parameter=value ..] [command]
+##
+
+##parameters:
+##  PROJECT          => Scenario to run
 PROJECT ?= l3vpn_c
+##  REBUILD          => Whether to rebuild the ansible python environment or not
 REBUILD := no
 
 # labvm specific
+##  LABVM_USER       => What user to use to provision the VM
 LABVM_USER ?= net-admin
+##  LABVM_PASS       => What password to use for the user for the provisioned VM
 LABVM_PASS ?= netscenarios
+##  LABVM_HOST       => What host to target to provision in Vagrantfile
 LABVM_HOST ?= piraeus
+##  LABVM_SSH_CONFIG => What file to use as ssh_config to login to the box
 LABVM_SSH_CONFIG ?= $(ROOT)/.network-scenarios.ssh_config
 
-##usage: make [command]
 ##
+##commands:
 
 ##  help             Print this help
 help: Makefile
